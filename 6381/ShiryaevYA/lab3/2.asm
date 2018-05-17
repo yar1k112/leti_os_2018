@@ -242,6 +242,9 @@ FOR_EACH_MSB:
 
 		cmp bl, 4Dh
 		je FOR_EACH_MSB
+	xor ax, ax
+	mov ax, 4Ch
+	int 21h
 CHECKMSB ENDP
 
 begin:
