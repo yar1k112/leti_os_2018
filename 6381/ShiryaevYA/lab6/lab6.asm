@@ -86,23 +86,44 @@ CHILD_PROCESS PROC
 	call PRINT
 	; Устанавливаем DS:DX на имя вызываемой программы
 		
-		mov dx,offset STD_CHILD_PATH
-		; Смотрим, есть ли хвост
-		xor ch,ch
-		mov cl,es:[80h]
-		cmp cx,0
-		je CHILD_PROCESS_NO_TAIL ; Если нет хвоста, то используем стандартное имя вызываемой программы
-		mov si,cx ; si - номер копируемого символа
-		push si ; Сохраняем кол-во символов
-		CHILD_PROCESS_CYCLE:
-			mov al,es:[81h+si]
-			mov [offset CHILD_PATH+si-1],al			
-			dec si
-		loop CHILD_PROCESS_CYCLE
-		pop si
-		mov [CHILD_PATH+si-1],0 ; Кладём в конец 0
+		mov es,es:[2ch]
+		mov si,0
+	next1:
+		mov dl,es:[si]
+		cmp dl,0
+		je end_path
+		inc si
+		jmp next1
+		
+	end_path:
+		inc si
+		mov dl,es:[si]
+		cmp dl,0
+		jne next1
+		add si,3
+		lea di,CHILD_PATH
+		
+	next2:
+		mov dl, es:[si]
+		cmp dl,0
+		je end_copy
+		mov [di],dl
+		inc di
+		inc si
+		jmp next2
+		
+	end_copy:
+		sub di,8
+		
+		mov [di], byte ptr 'l'	
+		mov [di+1], byte ptr 'a'
+		mov [di+2], byte ptr 'b'
+		mov [di+3], byte ptr '2'
+		mov [di+4], byte ptr '.'
+		mov [di+5], byte ptr 'e'
+		mov [di+6], byte ptr 'x'
+		mov [di+7], byte ptr 'e'
 		mov dx,offset CHILD_PATH ; Хвост есть, используем его
-		CHILD_PROCESS_NO_TAIL:
 		
 	; Устанавливаем ES:BX на блок параметров
 		push ds
@@ -236,8 +257,7 @@ DATA SEGMENT
 						dd 0 ; Сегмент и смещение первого FCB
 						dd 0 ; Второго
 	
-	CHILD_PATH  	db 50h dup ('$')
-	STD_CHILD_PATH	db 'L2.EXE',0
+	CHILD_PATH  	db 20h dup (0)
 	; Переменные для хранения SS, SP
 	KEEP_SS dw 0
 	KEEP_SP dw 0
